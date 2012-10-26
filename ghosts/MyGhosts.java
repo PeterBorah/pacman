@@ -20,6 +20,8 @@ import pacman.game.GameView;
  */
 public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 {
+	private static final float JITTER = .00f;
+
 	Random rnd=new Random();
 	
 	Map<GHOST, Integer> goals = new HashMap<GHOST, Integer>(4);
@@ -42,8 +44,14 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 						game.getPacmanCurrentNodeIndex(),game.getGhostLastMoveMade(ghost),DM.PATH));
 			}
 			else{
+				if(rnd.nextFloat()<JITTER){
+				MOVE[] possibleMoves=game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost),game.getGhostLastMoveMade(ghost));
+				myMoves.put(ghost,possibleMoves[rnd.nextInt(possibleMoves.length)]);
+				}
+				else{
 				myMoves.put(ghost,game.getApproximateNextMoveTowardsTarget(game.getGhostCurrentNodeIndex(ghost),
 						goals.get(ghost),game.getGhostLastMoveMade(ghost),DM.PATH));
+				}
 			}
 		}
 		//highlightTargets(game);
@@ -94,16 +102,16 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 			if (goals.get(ghost) == -3){
 				MOVE lastMove = game.getGhostLastMoveMade(ghost);
 				int[] pathToPac = game.getShortestPath(ghostLocs.get(ghost), pacLoc, lastMove);
+				int ghosts = 0;
 				for (int i = 1; i<pathToPac.length; i++){
 					if (ghostLocs.containsValue(pathToPac[i])){
 						close = false;
-						break;
+						ghosts += 1;
 					}
 					else{
 						for (int j = 0; j<junctions.length; j++){
 							if (pathToPac[i] == junctions[j]){
 								close = false;
-								break;
 							}
 						}
 					}
