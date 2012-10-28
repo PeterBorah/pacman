@@ -1,6 +1,5 @@
 package pacman.entries.ghosts;
 
-import java.awt.Color;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,55 +19,41 @@ import pacman.game.GameView;
  */
 public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 {
-	private static final float JITTER = .00f;
-
+	EnumMap<GHOST,MOVE> myMoves=new EnumMap<GHOST,MOVE>(GHOST.class);
+	int PILL_PROXIMITY = 0;
+	int GHOST_COST = 65;
+	int BLUE_BONUS = 35;
 	Random rnd=new Random();
 	
-	Map<GHOST, Integer> goals = new HashMap<GHOST, Integer>(4);
-	EnumMap<GHOST,MOVE> myMoves=new EnumMap<GHOST,MOVE>(GHOST.class);
-	
 	public EnumMap<GHOST,MOVE> getMove(Game game,long timeDue){
-		Map<GHOST, Integer> ghostLocs = new HashMap<GHOST, Integer>(4);
-		for(GHOST ghost : GHOST.values()){
-			goals.put(ghost, -3);
-			ghostLocs.put(ghost, game.getGhostCurrentNodeIndex(ghost));
-		}
-		getGoals(game, ghostLocs);
-		for(GHOST ghost : GHOST.values()){
-			if (goals.get(ghost) == -2){
-				myMoves.put(ghost,game.getApproximateNextMoveAwayFromTarget(game.getGhostCurrentNodeIndex(ghost),
-						game.getPacmanCurrentNodeIndex(),game.getGhostLastMoveMade(ghost),DM.PATH));
-			}
-			else if (goals.get(ghost) == -1){
-				myMoves.put(ghost,game.getApproximateNextMoveTowardsTarget(game.getGhostCurrentNodeIndex(ghost),
-						game.getPacmanCurrentNodeIndex(),game.getGhostLastMoveMade(ghost),DM.PATH));
-			}
-			else{
-				if(rnd.nextFloat()<JITTER){
-				MOVE[] possibleMoves=game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost),game.getGhostLastMoveMade(ghost));
-				myMoves.put(ghost,possibleMoves[rnd.nextInt(possibleMoves.length)]);
+		for(GHOST ghost : GHOST.values())	//for each ghost
+		{			
+			if(game.doesGhostRequireAction(ghost))		//if ghost requires an action
+			{
+				MOVE[] possibilities = game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost), game.getGhostLastMoveMade(ghost));
+				
+				boolean sameLoc = false;
+				
+				for (GHOST ghostFriend : GHOST.values()){
+					if (ghostFriend != ghost && game.getGhostCurrentNodeIndex(ghostFriend) == game.getGhostCurrentNodeIndex(ghost)){
+						sameLoc = true;
+					}
 				}
+
+				if (sameLoc){
+					myMoves.put(ghost,possibilities[rnd.nextInt(possibilities.length)]);
+				}
+				
+				else if(game.getGhostEdibleTime(ghost)>0 || closeToPower(game)){
+					myMoves.put(ghost, getBlueMove(game, ghost, possibilities));
+				}
+				
 				else{
-				myMoves.put(ghost,game.getApproximateNextMoveTowardsTarget(game.getGhostCurrentNodeIndex(ghost),
-						goals.get(ghost),game.getGhostLastMoveMade(ghost),DM.PATH));
+					myMoves.put(ghost, getColorfulMove(game, ghost, possibilities));
 				}
 			}
 		}
-		//highlightTargets(game);
 		return myMoves;
-	}
-	
-	private void highlightTargets(Game game){
-		for(GHOST ghost : GHOST.values()){
-			int node = goals.get(ghost);
-			if (node > -1){
-				GameView.addPoints(game, Color.cyan, node);
-			}
-			else if (node == -1){
-				GameView.addPoints(game, Color.cyan, game.getPacmanCurrentNodeIndex());
-			}
-			
-		}
 	}
 	
 	private boolean closeToPower(Game game)
@@ -76,101 +61,50 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
     	int[] powerPills=game.getPowerPillIndices();
     	
     	for(int i=0;i<powerPills.length;i++)
-    		if(game.isPowerPillStillAvailable(i) && game.getShortestPathDistance(powerPills[i],game.getPacmanCurrentNodeIndex())<20)
+    		if(game.isPowerPillStillAvailable(i) && game.getShortestPathDistance(powerPills[i],game.getPacmanCurrentNodeIndex())<PILL_PROXIMITY)
     			return true;
 
         return false;
     }
 	
-	private void getGoals(Game game, Map<GHOST, Integer> ghostLocs){
-		int unassigned = 4;
-		int pacLoc = game.getPacmanCurrentNodeIndex();
-		int[] junctions = game.getJunctionIndices();
+	private MOVE getBlueMove(Game game, GHOST ghost, MOVE[] possibilites){
+		return game.getApproximateNextMoveAwayFromTarget(game.getGhostCurrentNodeIndex(ghost),
+				game.getPacmanCurrentNodeIndex(),game.getGhostLastMoveMade(ghost),DM.PATH);
+	}
+	
+	private MOVE getColorfulMove(Game game, GHOST ghost, MOVE[] possibilities){
+
+		Map<MOVE, Integer> weights = new HashMap<MOVE, Integer>(possibilities.length);
+		int myLoc = game.getGhostCurrentNodeIndex(ghost);
 		
-		for(GHOST ghost : GHOST.values()){
-			if (game.getGhostEdibleTime(ghost)>0 || closeToPower(game)){
-				goals.put(ghost, -2);
-				unassigned--;
-			}
-			if (unassigned == 0){
-				return;
-			}
-		}
 		
-		for(GHOST ghost : GHOST.values()){
-			boolean close = true;
-			if (goals.get(ghost) == -3){
-				MOVE lastMove = game.getGhostLastMoveMade(ghost);
-				int[] pathToPac = game.getShortestPath(ghostLocs.get(ghost), pacLoc, lastMove);
-				int ghosts = 0;
-				for (int i = 1; i<pathToPac.length; i++){
-					if (ghostLocs.containsValue(pathToPac[i])){
-						close = false;
-						ghosts += 1;
-					}
-					else{
-						for (int j = 0; j<junctions.length; j++){
-							if (pathToPac[i] == junctions[j]){
-								close = false;
-							}
+		for (MOVE move : possibilities){
+			int neighbor = game.getNeighbour(myLoc, move);
+			int[] path = game.getShortestPath(neighbor, game.getPacmanCurrentNodeIndex(), move);
+			int score = path.length;
+			for (GHOST ghostFriend : GHOST.values()){
+				int ghostFriendLoc = game.getGhostCurrentNodeIndex(ghostFriend);
+					for (int node : path){
+						if (node == ghostFriendLoc && game.getGhostEdibleTime(ghostFriend)>0){
+							score += BLUE_BONUS;
 						}
-					}
-				}
-				if (close){
-					goals.put(ghost, -1);
-					unassigned--;
-				}
-			}
-		}
-		if (unassigned == 0){
-			return;
-		}
-		
-		int[] closeJunctions = new int[unassigned];
-		int[] cjValues = new int[unassigned];
-		
-		for (int i = 0; i<unassigned; i++){
-			cjValues[i] = Integer.MAX_VALUE;
-		}
-		
-		for (int i = 0; i<junctions.length; i++){
-			int distance = game.getShortestPathDistance(pacLoc, junctions[i]);
-			int flag = -1;
-			for (int j = 0; j<unassigned; j++){
-				if (distance < cjValues[j]){
-					flag = j;
-					break;
-				}
-			}
-			if (flag != -1){
-				for (int j = unassigned - 1; j>=0; j--){
-					if (j == flag){
-						cjValues[j] = distance;
-						closeJunctions[j] = junctions[i];
-						break;
-					}
-					else{
-						cjValues[j] = cjValues[j-1];
-						closeJunctions[j] = closeJunctions[j-1];
+						else if (node == ghostFriendLoc){
+							score += GHOST_COST;
 					}
 				}
 			}
+			weights.put(move, score);
 		}
 		
-		for (int i = 0; i<closeJunctions.length; i++){
-			GHOST best = null;
-			int bestScore = Integer.MAX_VALUE;
-			for(GHOST ghost : GHOST.values()){
-				if (goals.get(ghost) == -3){
-					MOVE lastMove = game.getGhostLastMoveMade(ghost);
-					int distance = game.getShortestPathDistance(ghostLocs.get(ghost), closeJunctions[i], lastMove);
-					if (distance<bestScore){
-						bestScore = distance;
-						best = ghost;
-					}
-				}
-				goals.put(best, closeJunctions[i]);
+		int bestScore = Integer.MAX_VALUE;
+		MOVE best = null;
+		for(MOVE move : possibilities){
+			if (weights.get(move) < bestScore){
+				bestScore = weights.get(move);
+				best = move;
 			}
 		}
-	}	
+		
+		return best;
+	}
 }
