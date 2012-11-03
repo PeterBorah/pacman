@@ -17,19 +17,12 @@ import pacman.game.GameView;
  * fill in the getActions() method. Any additional classes you write should either
  * be placed in this package or sub-packages (e.g., game.entries.ghosts.mypackage).
  */
-public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
+public class Upload2 extends Controller<EnumMap<GHOST,MOVE>>
 {
 	EnumMap<GHOST,MOVE> myMoves=new EnumMap<GHOST,MOVE>(GHOST.class);
 	int PILL_PROXIMITY = 0;
-	int TOO_CLOSE = 3;
-	
-	int GHOST_COST = -65;
-	int BLUE_BONUS = 10;
-	
-	int BLUE_PACMAN_WEIGHT = 10;
-	int BLUE_BLUE_COST = -1;
-	int BLUE_GHOST_BONUS = 2;
-	
+	int GHOST_COST = 65;
+	int BLUE_BONUS = 35;
 	Random rnd=new Random();
 	
 	public EnumMap<GHOST,MOVE> getMove(Game game,long timeDue){
@@ -42,11 +35,8 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 				boolean sameLoc = false;
 				
 				for (GHOST ghostFriend : GHOST.values()){
-					int distance = (game.getShortestPathDistance(game.getGhostCurrentNodeIndex(ghost), game.getGhostCurrentNodeIndex(ghostFriend)));
-					if ((ghostFriend != ghost) && distance < TOO_CLOSE && distance >= 0){
-						if (game.getShortestPathDistance(game.getGhostCurrentNodeIndex(ghost), game.getPacmanCurrentNodeIndex()) >= game.getShortestPathDistance(game.getGhostCurrentNodeIndex(ghostFriend), game.getPacmanCurrentNodeIndex())){
+					if (ghostFriend != ghost && game.getGhostCurrentNodeIndex(ghostFriend) == game.getGhostCurrentNodeIndex(ghost)){
 						sameLoc = true;
-						}
 					}
 				}
 
@@ -77,47 +67,11 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
         return false;
     }
 	
-	private MOVE getBlueMove(Game game, GHOST ghost, MOVE[] possibilities){
-		Map<MOVE, Integer> weights = new HashMap<MOVE, Integer>(possibilities.length);
-		int myLoc = game.getGhostCurrentNodeIndex(ghost);
-		
-		
-		for (MOVE move : possibilities){
-			int neighbor = game.getNeighbour(myLoc, move);
-			int pacLoc = game.getPacmanCurrentNodeIndex();
-			int score = game.getShortestPathDistance(pacLoc, neighbor)*(BLUE_PACMAN_WEIGHT);
-			for (GHOST ghostFriend : GHOST.values()){
-				int ghostFriendLoc = game.getGhostCurrentNodeIndex(ghostFriend);
-				int distance = game.getShortestPathDistance(pacLoc, ghostFriendLoc);
-				if (ghostFriend != ghost && distance > 0){
-					int[] path = new int[distance];
-					path = game.getShortestPath(pacLoc, ghostFriendLoc);
-						for (int node : path){
-							if (node == neighbor && game.getGhostEdibleTime(ghostFriend)>0){
-								score += BLUE_BLUE_COST;
-							}
-							else if (node == neighbor){
-								score += BLUE_GHOST_BONUS;
-						}
-					}
-				}
-			}
-			weights.put(move, score);
-		}
-		
-		int bestScore = Integer.MIN_VALUE;
-		MOVE best = null;
-		for(MOVE move : possibilities){
-			if (weights.get(move) > bestScore){
-				bestScore = weights.get(move);
-				best = move;
-			}
-		}
-		
-		return best;
-		
+	private MOVE getBlueMove(Game game, GHOST ghost, MOVE[] possibilites){
+		return game.getApproximateNextMoveAwayFromTarget(game.getGhostCurrentNodeIndex(ghost),
+				game.getPacmanCurrentNodeIndex(),game.getGhostLastMoveMade(ghost),DM.PATH);
 	}
-		
+	
 	private MOVE getColorfulMove(Game game, GHOST ghost, MOVE[] possibilities){
 
 		Map<MOVE, Integer> weights = new HashMap<MOVE, Integer>(possibilities.length);
@@ -129,15 +83,13 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 			int[] path = game.getShortestPath(neighbor, game.getPacmanCurrentNodeIndex(), move);
 			int score = path.length;
 			for (GHOST ghostFriend : GHOST.values()){
-				if (ghostFriend != ghost){
-					int ghostFriendLoc = game.getGhostCurrentNodeIndex(ghostFriend);
-						for (int node : path){
-							if (node == ghostFriendLoc && game.getGhostEdibleTime(ghostFriend)>0){
-								score -= BLUE_BONUS;
-							}
-							else if (node == ghostFriendLoc){
-								score -= GHOST_COST;
+				int ghostFriendLoc = game.getGhostCurrentNodeIndex(ghostFriend);
+					for (int node : path){
+						if (node == ghostFriendLoc && game.getGhostEdibleTime(ghostFriend)>0){
+							score += BLUE_BONUS;
 						}
+						else if (node == ghostFriendLoc){
+							score += GHOST_COST;
 					}
 				}
 			}

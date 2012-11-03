@@ -18,7 +18,7 @@ import pacman.game.GameView;
  * fill in the getActions() method. Any additional classes you write should either
  * be placed in this package or sub-packages (e.g., game.entries.ghosts.mypackage).
  */
-public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
+public class Upload1 extends Controller<EnumMap<GHOST,MOVE>>
 {
 	private static final float JITTER = .00f;
 
