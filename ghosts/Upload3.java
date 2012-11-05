@@ -17,18 +17,18 @@ import pacman.game.GameView;
  * fill in the getActions() method. Any additional classes you write should either
  * be placed in this package or sub-packages (e.g., game.entries.ghosts.mypackage).
  */
-public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
+public class Upload3 extends Controller<EnumMap<GHOST,MOVE>>
 {
 	EnumMap<GHOST,MOVE> myMoves=new EnumMap<GHOST,MOVE>(GHOST.class);
 	int PILL_PROXIMITY = 0;
-	int TOO_CLOSE = 2;
+	int TOO_CLOSE = 3;
 	
-	int GHOST_COST = -62;
-	int BLUE_BONUS = 33;
+	int GHOST_COST = -65;
+	int BLUE_BONUS = 10;
 	
 	int BLUE_PACMAN_WEIGHT = 10;
-	int BLUE_BLUE_COST = -2;
-	int BLUE_GHOST_BONUS = 1;
+	int BLUE_BLUE_COST = -1;
+	int BLUE_GHOST_BONUS = 2;
 	
 	Random rnd=new Random();
 	

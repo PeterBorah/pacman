@@ -16,7 +16,7 @@ public class Candidate implements Comparable<Candidate> {
 	public int[] values;
 	public double score;
 	private GeneticGhosts controller;
-	private static int TRIALS = 50;
+	private static int TRIALS = 100;
 
 	public Candidate(int[] values){
 		this.values = values;
@@ -26,19 +26,19 @@ public class Candidate implements Comparable<Candidate> {
 
 	private double score() {
     	double score=0;
-    	score += runExperiment(new BaconPacMan());
-    	score += runExperiment(new BSPacMan());
-    	score += runExperiment(new StarterPacMan());
+    	score += runExperiment(new BaconPacMan(), TRIALS);
+    	score += runExperiment(new BSPacMan(), TRIALS/2);
+    	score += runExperiment(new StarterPacMan(), TRIALS);
     	return score;
 	}
 	
-	private double runExperiment(Controller<MOVE> pacManController){
+	private double runExperiment(Controller<MOVE> pacManController, int trials){
 		double avgScore=0;
     	
     	Random rnd=new Random(0);
 		Game game;
 		
-		for(int i=0;i<TRIALS;i++)
+		for(int i=0;i<trials;i++)
 		{
 			game=new Game(rnd.nextLong());
 			
@@ -50,7 +50,7 @@ public class Candidate implements Comparable<Candidate> {
 			
 			avgScore+=game.getScore();
 		}
-    return avgScore/TRIALS;
+    return avgScore/trials;
 	}
 	@Override
 	public int compareTo(Candidate candidate) {

@@ -77,13 +77,13 @@ public class Ecosystem {
 		if (debug){System.out.println("mutate");}
 		int[] baby = new int[7];
 		for (int i = 0; i < 7; i++){
-			if (rnd.nextFloat() > .25){
+			if (rnd.nextFloat() > .75){
 				baby[i] = candidate.values[i];
 			}
 			else{
 				int randNum = rnd.nextInt(20);
 				int step;
-				if (i < 5 && i > 1){
+				if (i < 4 && i > 1){
 					step = 5;
 				}
 				else{
