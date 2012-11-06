@@ -10,13 +10,15 @@ import pacman.game.Constants.MOVE;
 import pacman.controllers.Controller;
 import pacman.controllers.examples.BSPacMan;
 import pacman.controllers.examples.BaconPacMan;
+import pacman.controllers.examples.BsePacMan;
+import pacman.controllers.examples.SardPacMan;
 import pacman.controllers.examples.StarterPacMan;
 
 public class Candidate implements Comparable<Candidate> {
 	public int[] values;
 	public double score;
 	private GeneticGhosts controller;
-	private static int TRIALS = 100;
+	private static int TRIALS = 50;
 
 	public Candidate(int[] values){
 		this.values = values;
@@ -29,6 +31,7 @@ public class Candidate implements Comparable<Candidate> {
     	score += runExperiment(new BaconPacMan(), TRIALS);
     	score += runExperiment(new BSPacMan(), TRIALS/2);
     	score += runExperiment(new StarterPacMan(), TRIALS);
+    	score += runExperiment(new SardPacMan(), TRIALS/3);
     	return score;
 	}
 	

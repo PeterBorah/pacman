@@ -12,43 +12,50 @@ import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 import pacman.game.GameView;
 
-/*
- * This is the class you need to modify for your entry. In particular, you need to
- * fill in the getActions() method. Any additional classes you write should either
- * be placed in this package or sub-packages (e.g., game.entries.ghosts.mypackage).
- */
 public class GeneticGhosts extends Controller<EnumMap<GHOST,MOVE>>
 {
 	
 	EnumMap<GHOST,MOVE> myMoves=new EnumMap<GHOST,MOVE>(GHOST.class);
-	int PILL_PROXIMITY;
 	int TOO_CLOSE;
+	int BLUE_PACMAN_WEIGHT;
 	
 	int GHOST_COST;
 	int BLUE_BONUS;
 	
-	int BLUE_PACMAN_WEIGHT;
 	int BLUE_BLUE_COST;
 	int BLUE_GHOST_BONUS;
 	
+	int SCALE_GC;
+	int SCALE_BB;
+	int SCALE_BBC;
+	int SCALE_BGB;
+	
 	Random rnd=new Random();
+	private int[] values;
 	
 	public GeneticGhosts(int[] values){
-	this.PILL_PROXIMITY = values[0];
-	this.TOO_CLOSE = values[1];
-	
-	this.GHOST_COST = values[2];
-	this.BLUE_BONUS = values[3];
-	
-	this.BLUE_PACMAN_WEIGHT = values[4];
-	this.BLUE_BLUE_COST = values[5];
-	this.BLUE_GHOST_BONUS = values[6];
+		this.TOO_CLOSE = 2;
+		this.BLUE_PACMAN_WEIGHT = 100;
+		
+		this.SCALE_GC = values[4];
+		this.SCALE_BB = values[5];
+		this.SCALE_BBC = values[6];
+		this.SCALE_BGB = values[7];
+		
+		this.values = values;
 	}
-	
+
 	public EnumMap<GHOST,MOVE> getMove(Game game,long timeDue){
-		for(GHOST ghost : GHOST.values())	//for each ghost
+		
+		this.GHOST_COST = (int) (values[0] * scale(game, SCALE_GC));
+		this.BLUE_BONUS = (int) (values[1] * scale(game, SCALE_BB));
+		
+		this.BLUE_BLUE_COST = (int) (values[2] * scale(game, SCALE_BBC));
+		this.BLUE_GHOST_BONUS = (int) (values[3] * scale(game, SCALE_BGB));
+		
+		for(GHOST ghost : GHOST.values())
 		{			
-			if(game.doesGhostRequireAction(ghost))		//if ghost requires an action
+			if(game.doesGhostRequireAction(ghost))
 			{
 				MOVE[] possibilities = game.getPossibleMoves(game.getGhostCurrentNodeIndex(ghost), game.getGhostLastMoveMade(ghost));
 				
@@ -67,7 +74,7 @@ public class GeneticGhosts extends Controller<EnumMap<GHOST,MOVE>>
 					myMoves.put(ghost,possibilities[rnd.nextInt(possibilities.length)]);
 				}
 				
-				else if(game.getGhostEdibleTime(ghost)>0 || closeToPower(game)){
+				else if(game.getGhostEdibleTime(ghost)>0){
 					myMoves.put(ghost, getBlueMove(game, ghost, possibilities));
 				}
 				
@@ -79,16 +86,15 @@ public class GeneticGhosts extends Controller<EnumMap<GHOST,MOVE>>
 		return myMoves;
 	}
 	
-	private boolean closeToPower(Game game)
-    {
-    	int[] powerPills=game.getPowerPillIndices();
-    	
-    	for(int i=0;i<powerPills.length;i++)
-    		if(game.isPowerPillStillAvailable(i) && game.getShortestPathDistance(powerPills[i],game.getPacmanCurrentNodeIndex())<PILL_PROXIMITY)
-    			return true;
-
-        return false;
-    }
+	private float scale(Game game, int maxScore) {
+		float score = game.getScore();
+		if (score >= maxScore){
+			return 1;
+		}
+		else{
+			return score/maxScore;
+		}
+	}
 	
 	private MOVE getBlueMove(Game game, GHOST ghost, MOVE[] possibilities){
 		Map<MOVE, Integer> weights = new HashMap<MOVE, Integer>(possibilities.length);

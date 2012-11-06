@@ -5,50 +5,63 @@ import java.util.Random;
 public class Ecosystem {
 
 	static final boolean debug = false;
-	static int[] seed = {0, 3, -65, 10, 10, -1, 2};
 	
 	static Random rnd=new Random();
 	
 	public static void main(String[] args) {
-		Candidate[] candidates = new Candidate[10];
-		Candidate seedCandidate = new Candidate(seed);
-		candidates[0] = seedCandidate;
-		for (int i=1; i<10; i++){
-			candidates[i] = mutate(candidates[0]);
+		Candidate[] candidates = new Candidate[20];
+		for (int i=0; i<20; i++){
+			candidates[i] = randomCandidate();
 		}
 		int i = 0;
 		while(true){
 			System.out.println(i++);
 			Generation currentGen = new Generation(candidates);
-			candidates = getNewCandidates(currentGen, seedCandidate);
+			candidates = getNewCandidates(currentGen);
 		}
 	}
 
-	private static Candidate[] getNewCandidates(Generation currentGen, Candidate seedCandidate) {
-		Candidate[] newCandidates = new Candidate[10];
+	private static Candidate[] getNewCandidates(Generation currentGen) {
+		Candidate[] newCandidates = new Candidate[20];
 		newCandidates[0] = currentGen.top[0];
-		for (int i=1; i<3; i++){
+		newCandidates[1] = currentGen.top[1];
+		for (int i=2; i<5; i++){
 			newCandidates[i] = babyAverage(currentGen);
 		}
-		for (int i=3; i<6; i++){
+		for (int i=5; i<13; i++){
 			newCandidates[i] = babyCross(currentGen);
 		}
-		for (int i=0; i<3; i++){
-			newCandidates[i + 6] = mutate(currentGen.top[i]);
+		for (int i=0; i<5; i++){
+			newCandidates[i + 12] = mutate(currentGen.top[i]);
 		}
-		newCandidates[9] = mutate(seedCandidate);
+		for (int i=17; i<20; i++){
+			newCandidates[i] = randomCandidate();
+		}
 		return newCandidates;
+	}
+	
+	private static Candidate randomCandidate() {
+		int[] baby = new int[8];
+		for (int i = 0; i < 8; i++){
+			if (i<4){
+				baby[i] = rnd.nextInt(200) - 100;
+			}
+			else{
+				baby[i] = rnd.nextInt(2000);
+			}
+		}
+		return new Candidate(baby);
 	}
 
 	private static Candidate babyCross(Generation currentGen) {
 		if (debug){System.out.println("cross");}
-		Candidate parent1 = currentGen.top[rnd.nextInt(4)];
+		Candidate parent1 = currentGen.top[rnd.nextInt(7)];
 		Candidate parent2 = parent1;
-		int[] baby = new int[7];
+		int[] baby = new int[8];
 		while (parent2 == parent1){
-			parent2 = currentGen.top[rnd.nextInt(4)];
+			parent2 = currentGen.top[rnd.nextInt(7)];
 		}
-		for (int i = 0; i < 7; i++){
+		for (int i = 0; i < 8; i++){
 			if (rnd.nextInt(2) == 1){
 				baby[i] = parent1.values[i];
 			}
@@ -61,13 +74,13 @@ public class Ecosystem {
 
 	private static Candidate babyAverage(Generation currentGen) {
 		if (debug){System.out.println("average");}
-		Candidate parent1 = currentGen.top[rnd.nextInt(4)];
+		Candidate parent1 = currentGen.top[rnd.nextInt(7)];
 		Candidate parent2 = parent1;
 		while (parent2 == parent1){
-			parent2 = currentGen.top[rnd.nextInt(4)];
+			parent2 = currentGen.top[rnd.nextInt(7)];
 		}
-		int[] baby = new int[7];
-		for (int i = 0; i < 7; i++){
+		int[] baby = new int[8];
+		for (int i = 0; i < 8; i++){
 			baby[i] = (parent1.values[i] + parent2.values[i])/2;
 		}
 		return new Candidate(baby);
@@ -75,19 +88,19 @@ public class Ecosystem {
 
 	private static Candidate mutate(Candidate candidate) {
 		if (debug){System.out.println("mutate");}
-		int[] baby = new int[7];
-		for (int i = 0; i < 7; i++){
+		int[] baby = new int[8];
+		for (int i = 0; i < 8; i++){
 			if (rnd.nextFloat() > .75){
 				baby[i] = candidate.values[i];
 			}
 			else{
 				int randNum = rnd.nextInt(20);
 				int step;
-				if (i < 4 && i > 1){
+				if (i < 4){
 					step = 5;
 				}
 				else{
-					step = 1;
+					step = 100;
 				}
 				switch (randNum){
 				case 0: case 1: case 2: case 3: case 4: case 5: case 6:
